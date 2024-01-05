@@ -147,7 +147,7 @@ for(design in c(1,2)){
   registerDoParallel(cl)
   
   finalMatrix <- foreach(id=1:N, .combine=rbind, .packages =packages) %dopar% {
-    write(paste("design = ",design, "; n = ",n,"; running ", id, " out of ", N, "...", sep = ""),file="simulations_state.txt",append=TRUE)
+    #write(paste("design = ",design, "; n = ",n,"; running ", id, " out of ", N, "...", sep = ""),file="simulations_state.txt",append=TRUE)
     set.seed(id)
     zdens = designs[design,1];xdens1=designs[design,2];
     xdens2=designs[design,3];wdens=designs[design,4];
