@@ -193,7 +193,7 @@ lower = 0; upper = 1; # lower and upper bound for beta set
 rangez = c(0,1,2); # range of z
 rangew = c(0,1,2); # range of w
 verbose = FALSE
-num_boostrap = 500 #number of bootstrap sample
+num_boostrap = 5000 #number of bootstrap sample
 set.seed(1)
 samples = rbind(1:n,#corrspond the the estimation
                 t(sapply(1:num_boostrap,function(i)sample.int(n,n,replace = TRUE))))
@@ -204,7 +204,7 @@ samples = rbind(1:n,#corrspond the the estimation
 data$z1 = as.numeric(data$z==1); data$z2=as.numeric(data$z==2)
 cox.res = coxph(Surv(y,delta)~x+z1+z2,data = data)
 print(summary(cox.res))
-ubar = 0.5
+ubar = 0.6
 results = c()
 
 cores=detectCores()

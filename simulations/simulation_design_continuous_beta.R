@@ -132,7 +132,7 @@ verbose = FALSE; # boolean for printing intermidate results
 ubar = .9
 ctime = Sys.time()
 
-N = 500;
+N = 1000;
 for(design in c(1,2)){
   for(n in c(500,1000)){
   #setup parallel backend to use many processors
@@ -141,7 +141,7 @@ for(design in c(1,2)){
   registerDoParallel(cl)
   
   finalMatrix <- foreach(id=1:N, .combine=rbind, .packages =packages) %dopar% {
-    #write(paste("ubar = ",ubar,"; design = ",design, "; n = ",n,"; running ", id, " out of ", N, "...", sep = ""),file="simulations_state.txt",append=TRUE)
+    write(paste("design = ",design, "; n = ",n,"; running ", id, " out of ", N, "...", sep = ""),file="simulations_state.txt",append=TRUE)
     set.seed(id)
     zdens = designs[design,1];xdens=designs[design,2];wdens=designs[design,3];
     beta0 = as.numeric(designs[design,4:5]); cdens = designs[design,6]
@@ -214,8 +214,11 @@ for(design in unique(allResults$design)){
                sd(current[current$index==2,c("coxboot")]-current[current$index==2,c("b0")]))
     mses = bias^2 + sds^2
     msescox =  biascox^2 + sdscox^2
-    rmse = sqrt(mean((current[current$index==1,c("est")]-current[current$index==1,c("b0")])^2))
-    rmsecox = sqrt(mean((current[current$index==1,c("cox")]-current[current$index==1,c("b0")])^2))
+    rmse = sqrt(mean((current[current$index==1,c("est")]-current[current$index==1,c("b0")])^2 + 
+                       (current[current$index==2,c("est")]-current[current$index==2,c("b0")])^2
+    ))
+    rmsecox = sqrt(mean((current[current$index==1,c("cox")]-current[current$index==1,c("b0")])^2 + 
+                          (current[current$index==2,c("cox")]-current[current$index==2,c("b0")])^2))
     q_025 = c(quantile(current[current$index==1,c("estboot")]-current[current$index==1,c("est")],0.025),
               quantile(current[current$index==2,c("estboot")]-current[current$index==2,c("est")],0.025))
     q_975 = c(quantile(current[current$index==1,c("estboot")]-current[current$index==1,c("est")],0.975),
@@ -255,6 +258,7 @@ names(stats) = c("design","cens","n","index",
                  "msecox",
                  "rmsecox","N")
 stats = stats[order(stats$design,stats$n),]
+stats
 library(xtable)
 
 stats = stats[,c("design","cens","n",

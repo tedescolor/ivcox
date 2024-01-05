@@ -268,8 +268,11 @@ for(design in unique(allResults$design)){
                sd(current[current$index==2,c("coxboot")]-current[current$index==2,c("b0")]))
     mses = bias^2 + sds^2
     msescox =  biascox^2 + sdscox^2
-    rmse = sqrt(mean((current[current$index==1,c("est")]-current[current$index==1,c("b0")])^2))
-    rmsecox = sqrt(mean((current[current$index==1,c("cox")]-current[current$index==1,c("b0")])^2))
+    rmse = sqrt(mean((current[current$index==1,c("est")]-current[current$index==1,c("b0")])^2 + 
+                       (current[current$index==2,c("est")]-current[current$index==2,c("b0")])^2
+    ))
+    rmsecox = sqrt(mean((current[current$index==1,c("cox")]-current[current$index==1,c("b0")])^2 + 
+                          (current[current$index==2,c("cox")]-current[current$index==2,c("b0")])^2))
     q_025 = c(quantile(current[current$index==1,c("estboot")]-current[current$index==1,c("est")],0.025),
               quantile(current[current$index==2,c("estboot")]-current[current$index==2,c("est")],0.025))
     q_975 = c(quantile(current[current$index==1,c("estboot")]-current[current$index==1,c("est")],0.975),
