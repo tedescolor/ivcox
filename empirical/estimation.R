@@ -167,18 +167,24 @@ inverse = function (f, lower = -100, upper = 100) {
 
 estimate.phi = function(x,u,j =NA,z){
   res = tryCatch({
-    phi0 = inverse(function(t){Ftz_xw(t,0,x,0,j=j)},lower = 0,upper = 10)(u)
-    if(z==0){res = phi0}else{
+    phi0 = inverse(function(t){Ftz_xw(t,0,x,0,j=j)},lower = 0,upper = 100)(u)
+    if(z==0){
+      res = phi0
+      }else if(z == 1) {
       auxfun = function(t){Ftz_xw(t,0,x,1,j=j)}
       point = u-auxfun(phi0)
-      phi1 = ifelse(point<=0,NA,inverse(function(t){Ftz_xw(t,1,x,1,j)},lower = 0,upper = 10)(point))
+      phi1 = ifelse(point<=0,NA,inverse(function(t){Ftz_xw(t,1,x,1,j)},lower = 0,upper = 100)(point))
       res = phi1
+      }else{
+        auxfun = function(t){Ftz_xw(t,0,x,2,j=j)}
+        point = u-auxfun(phi0)
+        phi2 = ifelse(point<=0,NA,inverse(function(t){Ftz_xw(t,2,x,2,j)},lower = 0,upper = 100)(point))
+        res = phi2
     }
   },error=function(cond){return(NA)})
   return(res)
 }
 }
-
 
 ################################################################################
 ### EParameter setting
@@ -188,13 +194,13 @@ kernel = epanechnikov
 data = data[data$black == 1 & data$male==0,]
 table(data$w, data$z)
 (n = nrow(data))
+set.seed(1)
 data$u = runif(n)
 lower = 0; upper = 1; # lower and upper bound for beta set
 rangez = c(0,1,2); # range of z
 rangew = c(0,1,2); # range of w
 verbose = FALSE
 num_boostrap = 5000 #number of bootstrap sample
-set.seed(1)
 samples = rbind(1:n,#corrspond the the estimation
                 t(sapply(1:num_boostrap,function(i)sample.int(n,n,replace = TRUE))))
 ################################################################################
@@ -208,7 +214,7 @@ ubar = 0.6
 results = c()
 
 cores=detectCores()
-cl <- makeCluster(cores[1]-10) #not to overload your computer
+cl <- makeCluster(cores[1]-6) #not to overload your computer
 registerDoParallel(cl)
 finalMatrix <- foreach(smp=1:nrow(samples), .combine=rbind, .packages =packages) %dopar% {
   #write(paste("ubar = ",ubar,"; running ", smp, " out of ", nrow(samples), "...", sep = ""),file="simulations_state.txt",append=TRUE)
@@ -225,8 +231,8 @@ finalMatrix <- foreach(smp=1:nrow(samples), .combine=rbind, .packages =packages)
   min.ys = 0; max.ys = max(ys)
   xkern = t(sapply(1:n, function(i) kernel((xs - xs[i])/hs[i])))
   matys = sapply(1:n, function(i) as.numeric(ys[i] >= ys))
-  matws = rbind(as.numeric(ws==0),as.numeric(ws==1))
-  matzs = rbind(as.numeric(zs==0),as.numeric(zs==1))
+  matws = rbind(as.numeric(ws==0),as.numeric(ws==1),as.numeric(ws==2))
+  matzs = rbind(as.numeric(zs==0),as.numeric(zs==1),as.numeric(zs==2))
   vs = pmin(ubar,us)
   Deltas = as.numeric(us<=ubar)
   tzs = sapply(1:n, function(j) estimate.phi(x = xs[j],u = vs[j],j = j,z = zs[j]) )
@@ -239,7 +245,7 @@ finalMatrix <- foreach(smp=1:nrow(samples), .combine=rbind, .packages =packages)
 stopCluster(cl)
 finalMatrix = as.data.frame(finalMatrix)
 names(finalMatrix) = c("id","isEst","x","z1","z2")
-#write.csv(finalMatrix,"empirical_application_results.csv",row.names = F)
+write.csv(finalMatrix,"empirical_application_results.csv",row.names = F)
 head(finalMatrix)
 
 est = finalMatrix[finalMatrix$isEst==1,c("x","z1","z2")]
@@ -256,6 +262,8 @@ res = cbind(as.numeric(est),
             as.numeric( cox.res$coefficients+1.96*sqrt(diag(cox.res$var))))
 colnames(res) = c("est","sd","CI025","CI975","cox.est","cox.sd","cox.CI025","cox.CI975")
 rownames(res) = c("x","z1","z2")
+
 write.csv(res,"estimation.csv")
+res
 library(xtable)
 xtable(res,digits = c(0,rep(3,8)) )
